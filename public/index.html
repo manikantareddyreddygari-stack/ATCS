@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATCS — Traffic Management Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── TOP NAV ── -->
+<nav class="topnav">
+  <div class="nav-brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+    <span class="brand-name">ATCS</span>
+    <span class="brand-divider"></span>
+    <span class="brand-sub">Traffic Management Console</span>
+  </div>
+  <div class="nav-status">
+    <div class="status-item">
+      <span class="indicator indicator--green" id="sysIndicator"></span>
+      <span id="sysLabel">System Online</span>
+    </div>
+    <div class="status-item">Uptime <strong id="uptimeDisplay">00:00:00</strong></div>
+    <div class="status-item">Cycles <strong id="cycleCount">0</strong></div>
+    <div class="status-item time-display" id="clockDisplay"></div>
+  </div>
+  <div class="nav-actions">
+    <span class="mode-tag" id="modeBadge">Actuated</span>
+    <button class="nav-btn nav-btn--danger" onclick="openEvModal('NORTH')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      N-EVP
+    </button>
+    <button class="nav-btn nav-btn--danger" onclick="openEvModal('EAST')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      E-EVP
+    </button>
+    <button class="nav-btn nav-btn--secondary" onclick="resetSystem()">Reset</button>
+  </div>
+</nav>
+
+<!-- ── EMERGENCY STRIP ── -->
+<div class="emergency-strip hidden" id="emergencyBanner">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 22h20L12 2zm0 4l7 14H5l7-14zm-1 6v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+  <span>Emergency Vehicle Priority Active —</span>
+  <strong id="emergencyApproach"></strong>
+  <span class="ev-step-badge" id="evStepBadge"></span>
+</div>
+
+<!-- ── MAIN LAYOUT ── -->
+<div class="workspace">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar">
+
+    <section class="card">
+      <div class="card-header">Traffic Demand (vph)</div>
+      <div class="flow-list">
+        <div class="flow-item">
+          <div class="flow-item-top">
+            <div class="approach-tag approach-tag--n">N</div>
+            <span class="approach-name">North</span>
+            <span class="flow-num" id="flowValNORTH">720</span>
+            <span class="flow-unit">vph</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" min="0" max="1800" value="720" id="sliderNORTH"
+              oninput="updateFlowSlider('NORTH',this.value)" onchange="pushFlows()">
+          </div>
+          <div class="sat-bar"><div class="sat-fill sat-fill--n" id="satNORTH" style="width:40%"></div></div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-top">
+            <div class="approach-tag approach-tag--s">S</div>
+            <span class="approach-name">South</span>
+            <span class="flow-num" id="flowValSOUTH">540</span>
+            <span class="flow-unit">vph</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" min="0" max="1800" value="540" id="sliderSOUTH"
+              oninput="updateFlowSlider('SOUTH',this.value)" onchange="pushFlows()">
+          </div>
+          <div class="sat-bar"><div class="sat-fill sat-fill--s" id="satSOUTH" style="width:30%"></div></div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-top">
+            <div class="approach-tag approach-tag--e">E</div>
+            <span class="approach-name">East</span>
+            <span class="flow-num" id="flowValEAST">900</span>
+            <span class="flow-unit">vph</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" min="0" max="1800" value="900" id="sliderEAST"
+              oninput="updateFlowSlider('EAST',this.value)" onchange="pushFlows()">
+          </div>
+          <div class="sat-bar"><div class="sat-fill sat-fill--e" id="satEAST" style="width:50%"></div></div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-top">
+            <div class="approach-tag approach-tag--w">W</div>
+            <span class="approach-name">West</span>
+            <span class="flow-num" id="flowValWEST">660</span>
+            <span class="flow-unit">vph</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" min="0" max="1800" value="660" id="sliderWEST"
+              oninput="updateFlowSlider('WEST',this.value)" onchange="pushFlows()">
+          </div>
+          <div class="sat-bar"><div class="sat-fill sat-fill--w" id="satWEST" style="width:37%"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">Webster Cycle Optimizer</div>
+      <div class="optimizer-display">
+        <div class="cycle-ring-wrap">
+          <canvas id="cycleRingCanvas" width="100" height="100"></canvas>
+          <div class="cycle-ring-label">
+            <span id="cycleVal">90</span>
+            <small>sec C₀</small>
+          </div>
+        </div>
+        <div class="optimizer-stats">
+          <div class="opt-row">
+            <span>Y Ratio</span><strong id="websterY">—</strong>
+          </div>
+          <div class="opt-row">
+            <span>Active Phase</span><strong id="activePhase" class="text-green">—</strong>
+          </div>
+          <div class="opt-row">
+            <span>Phase Timer</span><strong id="phaseTimer">—</strong>
+          </div>
+          <div class="opt-row">
+            <span>Controller</span><strong id="controllerMode">—</strong>
+          </div>
+        </div>
+      </div>
+      <!-- Green split bars -->
+      <div class="split-section">
+        <div class="split-label-row">
+          <span>Green Splits</span><span>g_i (s)</span>
+        </div>
+        <div id="splitBarsGrid"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">Signal Phase Diagram</div>
+      <div class="phase-diagram" id="phaseDiagram"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">Emergency Dispatch</div>
+      <div class="ev-dispatch-grid">
+        <button class="ev-btn" onclick="openEvModal('NORTH')">
+          <span class="ev-btn-dir">↓ N</span>
+          <span class="ev-btn-label">Dispatch EV</span>
+        </button>
+        <button class="ev-btn" onclick="openEvModal('SOUTH')">
+          <span class="ev-btn-dir">↑ S</span>
+          <span class="ev-btn-label">Dispatch EV</span>
+        </button>
+        <button class="ev-btn" onclick="openEvModal('EAST')">
+          <span class="ev-btn-dir">← E</span>
+          <span class="ev-btn-label">Dispatch EV</span>
+        </button>
+        <button class="ev-btn" onclick="openEvModal('WEST')">
+          <span class="ev-btn-dir">→ W</span>
+          <span class="ev-btn-label">Dispatch EV</span>
+        </button>
+      </div>
+    </section>
+
+  </aside>
+
+  <!-- CENTER: INTERSECTION CANVAS -->
+  <main class="intersection-panel">
+    <div class="intersection-toolbar">
+      <span class="toolbar-label">Intersection View — CAM-OVERVIEW</span>
+      <div class="toolbar-right">
+        <span class="tb-badge" id="tbVehicleCount">0 vehicles</span>
+        <span class="tb-badge tb-badge--green" id="tbActivePhase">EAST GREEN</span>
+      </div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="intersectionCanvas" width="600" height="600"></canvas>
+
+      <!-- Signal head overlays -->
+      <div class="sig-overlay sig-overlay--nw" id="sigOverlayNORTH">
+        <div class="sig-head">
+          <div class="sig-bulb" id="sigR_NORTH"></div>
+          <div class="sig-bulb" id="sigY_NORTH"></div>
+          <div class="sig-bulb" id="sigG_NORTH"></div>
+        </div>
+        <div class="sig-info">
+          <div class="sig-approach">N</div>
+          <div class="sig-state" id="sigText_NORTH">RED</div>
+          <div class="sig-queue">Q: <span id="queue_NORTH">0</span></div>
+        </div>
+      </div>
+      <div class="sig-overlay sig-overlay--ne" id="sigOverlayEAST">
+        <div class="sig-head">
+          <div class="sig-bulb" id="sigR_EAST"></div>
+          <div class="sig-bulb" id="sigY_EAST"></div>
+          <div class="sig-bulb" id="sigG_EAST"></div>
+        </div>
+        <div class="sig-info">
+          <div class="sig-approach">E</div>
+          <div class="sig-state" id="sigText_EAST">GREEN</div>
+          <div class="sig-queue">Q: <span id="queue_EAST">0</span></div>
+        </div>
+      </div>
+      <div class="sig-overlay sig-overlay--sw" id="sigOverlayWEST">
+        <div class="sig-head">
+          <div class="sig-bulb" id="sigR_WEST"></div>
+          <div class="sig-bulb" id="sigY_WEST"></div>
+          <div class="sig-bulb" id="sigG_WEST"></div>
+        </div>
+        <div class="sig-info">
+          <div class="sig-approach">W</div>
+          <div class="sig-state" id="sigText_WEST">RED</div>
+          <div class="sig-queue">Q: <span id="queue_WEST">0</span></div>
+        </div>
+      </div>
+      <div class="sig-overlay sig-overlay--se" id="sigOverlaySOUTH">
+        <div class="sig-head">
+          <div class="sig-bulb" id="sigR_SOUTH"></div>
+          <div class="sig-bulb" id="sigY_SOUTH"></div>
+          <div class="sig-bulb" id="sigG_SOUTH"></div>
+        </div>
+        <div class="sig-info">
+          <div class="sig-approach">S</div>
+          <div class="sig-state" id="sigText_SOUTH">RED</div>
+          <div class="sig-queue">Q: <span id="queue_SOUTH">0</span></div>
+        </div>
+      </div>
+
+      <!-- CCTV PiP -->
+      <div class="cctv-pip">
+        <div class="cctv-pip-header">
+          <span class="cctv-rec-dot"></span>CAM-N1 &nbsp;|&nbsp; MOT ACTIVE
+        </div>
+        <canvas id="cctvCanvas" width="240" height="160"></canvas>
+      </div>
+    </div>
+
+    <!-- Stats strip below canvas -->
+    <div class="stats-strip">
+      <div class="stat-block">
+        <div class="stat-val" id="avgDelay">—</div>
+        <div class="stat-key">Avg Delay (s)</div>
+      </div>
+      <div class="stat-block stat-block--divider"></div>
+      <div class="stat-block">
+        <div class="stat-val" id="throughput">—</div>
+        <div class="stat-key">Throughput (vph)</div>
+      </div>
+      <div class="stat-block stat-block--divider"></div>
+      <div class="stat-block">
+        <div class="stat-val" id="avgSpeed">—</div>
+        <div class="stat-key">Avg Speed (km/h)</div>
+      </div>
+      <div class="stat-block stat-block--divider"></div>
+      <div class="stat-block">
+        <div class="stat-val" id="vehiclesServed">0</div>
+        <div class="stat-key">Vehicles Served</div>
+      </div>
+      <div class="stat-block stat-block--divider"></div>
+      <div class="stat-block">
+        <div class="stat-val stat-val--alert" id="emergencyCount">0</div>
+        <div class="stat-key">EVP Events</div>
+      </div>
+      <div class="stat-block stat-block--divider"></div>
+      <div class="stat-block">
+        <div class="stat-val" id="gapOutCount">0</div>
+        <div class="stat-key">Gap-Out Events</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+
+    <section class="card">
+      <div class="card-header">
+        Average Delay Trend
+        <span class="chart-badge">Webster d_i</span>
+      </div>
+      <div class="chart-container"><canvas id="delayChart"></canvas></div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        Approach Volumes
+        <span class="chart-badge">Live</span>
+      </div>
+      <div class="chart-container"><canvas id="flowChart"></canvas></div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">MOT Vehicle Tracker</div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>ID</th><th>Type</th><th>Approach</th><th>km/h</th><th>State</th></tr>
+          </thead>
+          <tbody id="vehicleTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        Audit Log
+        <span class="chart-badge" id="walCount">0 records</span>
+      </div>
+      <div class="audit-log-wrap" id="auditLog"></div>
+    </section>
+
+  </aside>
+</div>
+
+<!-- ── EMERGENCY VEHICLE MODAL ── -->
+<div class="modal-backdrop hidden" id="evModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color:#e53935"><path d="M12 2L2 22h20L12 2zm0 4l7 14H5l7-14zm-1 6v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+        Emergency Vehicle Dispatch
+      </div>
+      <button class="modal-close" onclick="closeEvModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <input type="hidden" id="evModalApproach" value="">
+
+      <div class="modal-approach-info">
+        Approach: <strong id="evApproachLabel">—</strong>
+        <span class="approach-dir-hint" id="evApproachHint"></span>
+      </div>
+
+      <div class="vehicle-selector">
+        <div class="vs-option selected" id="vsAmbulance" onclick="selectEvType('AMBULANCE')">
+          <div class="vs-icon">🚑</div>
+          <div class="vs-details">
+            <div class="vs-name">Ambulance</div>
+            <div class="vs-sub">Medical Emergency · ALS Unit</div>
+          </div>
+          <div class="vs-radio" id="radioAmbulance"><div class="vs-radio-dot"></div></div>
+        </div>
+        <div class="vs-option" id="vsFiretruck" onclick="selectEvType('FIRETRUCK')">
+          <div class="vs-icon">🚒</div>
+          <div class="vs-details">
+            <div class="vs-name">Fire Engine</div>
+            <div class="vs-sub">Fire Response · Heavy Unit</div>
+          </div>
+          <div class="vs-radio" id="radioFiretruck"></div>
+        </div>
+      </div>
+
+      <input type="hidden" id="evTypeSelect" value="AMBULANCE">
+
+      <div class="preemption-steps">
+        <div class="ps-title">EVP Preemption Sequence (NEMA TS-2 Compliant)</div>
+        <div class="ps-row"><span class="ps-num">1</span><span class="ps-dot ps-dot--y"></span><span>Yellow clearance on conflicting green — <em>3.0 s</em></span></div>
+        <div class="ps-row"><span class="ps-num">2</span><span class="ps-dot ps-dot--r"></span><span>All-Red intersection clearance — <em>1.2 s</em></span></div>
+        <div class="ps-row"><span class="ps-num">3</span><span class="ps-dot ps-dot--g"></span><span>Exclusive Green Corridor granted — <em>15 s</em></span></div>
+        <div class="ps-row"><span class="ps-num">4</span><span class="ps-dot ps-dot--b"></span><span>Normal actuated control resumes</span></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn--ghost" onclick="closeEvModal()">Cancel</button>
+      <button class="modal-btn modal-btn--danger" onclick="dispatchEvVehicle()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Dispatch &amp; Preempt
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

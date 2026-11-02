@@ -1,0 +1,13 @@
+{
+  "name": "atcs-adaptive-traffic-signal-control",
+  "version": "1.0.0",
+  "description": "Adaptive Traffic Signal Control System with CCTV Computer Vision Analytics and Emergency Vehicle Priority Preemption",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["traffic", "adaptive", "signal", "control", "computer-vision", "NEMA", "Webster"],
+  "author": "ATCS Research Project - BTech CSE 2025-2026",
+  "license": "MIT"
+}

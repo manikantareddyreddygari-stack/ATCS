@@ -1,0 +1,18 @@
+# Node
+node_modules/
+
+# WAL database (runtime data — not needed in repo)
+data/traffic_analytics.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
